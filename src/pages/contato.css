@@ -1,0 +1,95 @@
+.contato-page {
+  padding-top: 48px;
+}
+
+.contato-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.contato-form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 13.5px;
+  color: var(--brown-700);
+}
+
+.campo input,
+.campo textarea {
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-main);
+  resize: vertical;
+}
+
+.campo input:focus,
+.campo textarea:focus {
+  border-color: var(--yellow-500);
+}
+
+.campo-nota {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin: 0;
+}
+
+.contato-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  font-size: 14.5px;
+  color: var(--text-muted);
+}
+
+.info-card p {
+  margin: 2px 0;
+}
+
+.info-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--yellow-600);
+  margin-bottom: 8px !important;
+}
+
+.mapa-wrapper {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+@media (max-width: 860px) {
+  .contato-grid {
+    grid-template-columns: 1fr;
+  }
+}

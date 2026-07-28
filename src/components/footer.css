@@ -1,0 +1,76 @@
+.footer {
+  background: var(--brown-900);
+  color: var(--yellow-100);
+  margin-top: 80px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+  gap: 32px;
+  padding: 56px 24px 40px;
+}
+
+.footer-brand .brand-mark {
+  background: var(--yellow-500);
+  color: var(--brown-900);
+  margin-bottom: 14px;
+}
+
+.footer-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  margin-bottom: 4px;
+}
+
+.footer-slogan {
+  color: #d9c4a3;
+  font-size: 14px;
+  max-width: 220px;
+}
+
+.footer-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--yellow-500);
+  margin-bottom: 14px;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-col a,
+.footer-text {
+  font-size: 14.5px;
+  color: #ecdfc6;
+}
+
+.footer-col a:hover {
+  color: var(--yellow-500);
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 18px 24px;
+  font-size: 13px;
+  color: #b89f7c;
+}
+
+@media (max-width: 780px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+}
