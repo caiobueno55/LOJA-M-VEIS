@@ -13,25 +13,53 @@ export default function ProdutoDetalhe() {
   const [produto, setProduto] = useState(() => getProdutoBySlug(id))
   const [relacionados, setRelacionados] = useState([])
   const [imagemAtiva, setImagemAtiva] = useState(0)
+  const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
+    let ativo = true
     window.scrollTo({ top: 0 })
     setImagemAtiva(0)
-    carregarProdutos().then((lista) => {
-      const encontrado = lista.find((item) => item.slug === id)
-      setProduto(encontrado)
-      setRelacionados(
-        encontrado
-          ? lista
-              .filter(
-                (item) =>
-                  item.categoria_slug === encontrado.categoria_slug && item.id !== encontrado.id,
-              )
-              .slice(0, 4)
-          : [],
-      )
-    })
+    setCarregando(true)
+
+    carregarProdutos()
+      .then((lista) => {
+        if (!ativo) {
+          return
+        }
+
+        const encontrado = lista.find((item) => item.slug === id)
+        setProduto(encontrado)
+        setRelacionados(
+          encontrado
+            ? lista
+                .filter(
+                  (item) =>
+                    item.categoria_slug === encontrado.categoria_slug && item.id !== encontrado.id,
+                )
+                .slice(0, 4)
+            : [],
+        )
+      })
+      .finally(() => {
+        if (ativo) {
+          setCarregando(false)
+        }
+      })
+
+    return () => {
+      ativo = false
+    }
   }, [id])
+
+  if (carregando && !produto) {
+    return (
+      <section className="section produto-detalhe">
+        <div className="container">
+          <p className="produto-loading">Carregando produto...</p>
+        </div>
+      </section>
+    )
+  }
 
   if (!produto) {
     return <Navigate to="/produtos" replace />
