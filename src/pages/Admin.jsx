@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { categorias } from '../data/categorias.js'
 import {
+  carregarProdutosAdminGitHub,
+  GITHUB_BRANCH_PADRAO,
   getProdutosCriadosAdmin,
+  publicarProdutosGitHub,
   removerProdutoAdmin,
   salvarProdutoAdmin,
 } from '../data/produtos.js'
@@ -30,6 +33,12 @@ export default function Admin() {
   )
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
+  const [sucesso, setSucesso] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [token, setToken] = useState(() => localStorage.getItem('jhl-github-token') || '')
+  const [branch, setBranch] = useState(
+    () => localStorage.getItem('jhl-github-branch') || GITHUB_BRANCH_PADRAO,
+  )
   const [form, setForm] = useState(inicial)
   const [produtosAdmin, setProdutosAdmin] = useState(() => getProdutosCriadosAdmin())
 
@@ -48,22 +57,57 @@ export default function Admin() {
     setForm((atual) => ({ ...atual, [campo]: valor }))
   }
 
-  function cadastrar(event) {
+  async function publicar(lista, mensagemSucesso) {
+    setSalvando(true)
+    setErro('')
+    setSucesso('')
+    try {
+      localStorage.setItem('jhl-github-token', token)
+      localStorage.setItem('jhl-github-branch', branch)
+      await publicarProdutosGitHub(lista, token, branch)
+      setProdutosAdmin(lista)
+      setSucesso(mensagemSucesso)
+    } catch (error) {
+      setErro(error.message)
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  async function cadastrar(event) {
     event.preventDefault()
     if (!form.nome.trim() || !form.preco || !form.descricao_curta.trim()) {
       setErro('Preencha nome, preço e descrição curta.')
       return
     }
 
-    salvarProdutoAdmin(form)
-    setProdutosAdmin(getProdutosCriadosAdmin())
+    const produto = salvarProdutoAdmin(form)
+    const novaLista = [produto, ...produtosAdmin]
     setForm(inicial)
-    setErro('')
+    await publicar(novaLista, 'Produto publicado no GitHub.')
   }
 
-  function remover(id) {
+  async function remover(id) {
     removerProdutoAdmin(id)
-    setProdutosAdmin(getProdutosCriadosAdmin())
+    const novaLista = produtosAdmin.filter((produto) => produto.id !== id)
+    await publicar(novaLista, 'Produto removido e GitHub atualizado.')
+  }
+
+  async function sincronizar() {
+    setSalvando(true)
+    setErro('')
+    setSucesso('')
+    try {
+      localStorage.setItem('jhl-github-token', token)
+      localStorage.setItem('jhl-github-branch', branch)
+      const lista = await carregarProdutosAdminGitHub(token, branch)
+      setProdutosAdmin(lista)
+      setSucesso('Produtos sincronizados do GitHub.')
+    } catch (error) {
+      setErro(error.message)
+    } finally {
+      setSalvando(false)
+    }
   }
 
   if (!autenticado) {
@@ -113,6 +157,29 @@ export default function Admin() {
 
         <div className="admin-grid">
           <form className="admin-form" onSubmit={cadastrar}>
+            <div className="admin-sync">
+              <label className="admin-field">
+                <span>Token do GitHub</span>
+                <input
+                  type="password"
+                  value={token}
+                  onChange={(event) => setToken(event.target.value)}
+                  placeholder="Cole aqui um token com permissão de conteúdo"
+                />
+              </label>
+              <label className="admin-field">
+                <span>Branch</span>
+                <input
+                  value={branch}
+                  onChange={(event) => setBranch(event.target.value)}
+                  placeholder={GITHUB_BRANCH_PADRAO}
+                />
+              </label>
+              <button className="btn btn-outline btn-sm" type="button" onClick={sincronizar}>
+                Sincronizar GitHub
+              </button>
+            </div>
+
             <div className="admin-form-row">
               <label className="admin-field">
                 <span>Nome do produto</span>
@@ -232,8 +299,9 @@ export default function Admin() {
             </div>
 
             {erro && <p className="admin-error">{erro}</p>}
-            <button className="btn btn-accent" type="submit">
-              Criar produto
+            {sucesso && <p className="admin-success">{sucesso}</p>}
+            <button className="btn btn-accent" type="submit" disabled={salvando}>
+              {salvando ? 'Publicando...' : 'Criar produto'}
             </button>
           </form>
 
@@ -253,7 +321,7 @@ export default function Admin() {
                         currency: 'BRL',
                       })}
                     </p>
-                    <button type="button" onClick={() => remover(produto.id)}>
+                    <button type="button" onClick={() => remover(produto.id)} disabled={salvando}>
                       Remover
                     </button>
                   </div>

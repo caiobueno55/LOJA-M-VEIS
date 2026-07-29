@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, Navigate } from 'react-router-dom'
-import { getProdutoBySlug, getRelacionados } from '../data/produtos.js'
+import { carregarProdutos, getProdutoBySlug } from '../data/produtos.js'
 import { getCategoriaBySlug } from '../data/categorias.js'
 import { linkWhatsApp } from '../data/loja.js'
 import ProductCard from '../components/ProductCard.jsx'
@@ -10,12 +10,22 @@ const formatador = new Intl.NumberFormat('pt-BR', { style: 'currency', currency:
 
 export default function ProdutoDetalhe() {
   const { id } = useParams()
-  const produto = getProdutoBySlug(id)
+  const [produto, setProduto] = useState(() => getProdutoBySlug(id))
+  const [relacionados, setRelacionados] = useState([])
   const [imagemAtiva, setImagemAtiva] = useState(0)
 
   useEffect(() => {
     window.scrollTo({ top: 0 })
     setImagemAtiva(0)
+    carregarProdutos().then((lista) => {
+      const encontrado = lista.find((item) => item.slug === id)
+      setProduto(encontrado)
+      setRelacionados(
+        lista
+          .filter((item) => item.categoria_slug === encontrado?.categoria_slug && item.id !== encontrado.id)
+          .slice(0, 4),
+      )
+    })
   }, [id])
 
   if (!produto) {
@@ -23,8 +33,6 @@ export default function ProdutoDetalhe() {
   }
 
   const categoria = getCategoriaBySlug(produto.categoria_slug)
-  const relacionados = getRelacionados(produto, 4)
-
   const mensagemWhatsApp = `Olá! Tenho interesse no produto "${produto.nome}" (vi no site). Pode me passar mais informações?`
 
   return (

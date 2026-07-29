@@ -18,7 +18,6 @@ export default function Header() {
     <header className="header">
       <div className="container header-bar">
         <NavLink to="/" className="brand" onClick={() => setOpen(false)}>
-          <span className="brand-mark">M</span>
           <span className="brand-name">{loja.nome}</span>
         </NavLink>
 

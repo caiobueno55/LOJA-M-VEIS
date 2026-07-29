@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { categorias } from '../data/categorias.js'
-import { getProdutos } from '../data/produtos.js'
+import { carregarProdutos, getProdutos } from '../data/produtos.js'
 import ProductCard from '../components/ProductCard.jsx'
 import './produtos.css'
 
@@ -9,10 +9,11 @@ export default function Produtos() {
   const [searchParams, setSearchParams] = useSearchParams()
   const categoriaAtiva = searchParams.get('categoria') || 'todos'
   const [busca, setBusca] = useState('')
-  const [produtos] = useState(() => getProdutos())
+  const [produtos, setProdutos] = useState(() => getProdutos())
 
   useEffect(() => {
     window.scrollTo({ top: 0 })
+    carregarProdutos().then(setProdutos)
   }, [])
 
   const listaFiltrada = useMemo(() => {
@@ -21,7 +22,7 @@ export default function Produtos() {
       const bateBusca = p.nome.toLowerCase().includes(busca.toLowerCase())
       return bateCategoria && bateBusca
     })
-  }, [categoriaAtiva, busca])
+  }, [categoriaAtiva, busca, produtos])
 
   function selecionarCategoria(slug) {
     if (slug === 'todos') {

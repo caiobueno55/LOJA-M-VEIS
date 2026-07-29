@@ -24,6 +24,10 @@ const fotos = {
 }
 
 const STORAGE_KEY = 'jhl-produtos-admin'
+const GITHUB_OWNER = 'caiobueno55'
+const GITHUB_REPO = 'LOJA-M-VEIS'
+const GITHUB_PATH = 'src/data/produtos-admin.json'
+export const GITHUB_BRANCH_PADRAO = 'feature/painel-admin-produtos'
 
 function criarSlug(texto) {
   return texto
@@ -266,8 +270,59 @@ function getProdutosAdmin() {
   }
 }
 
+function salvarProdutosAdminLocal(produtosAdmin) {
+  if (typeof localStorage === 'undefined') {
+    return
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(produtosAdmin))
+}
+
+function encodeBase64Unicode(texto) {
+  return btoa(unescape(encodeURIComponent(texto)))
+}
+
+async function buscarArquivoGitHub(token, branch) {
+  const resposta = await fetch(
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}?ref=${branch}`,
+    {
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/vnd.github+json',
+          }
+        : { Accept: 'application/vnd.github+json' },
+    },
+  )
+
+  if (resposta.status === 404) {
+    return { sha: null, produtos: [] }
+  }
+
+  if (!resposta.ok) {
+    throw new Error('Não foi possível acessar o arquivo de produtos no GitHub.')
+  }
+
+  const arquivo = await resposta.json()
+  const conteudo = decodeURIComponent(escape(atob(arquivo.content.replace(/\n/g, ''))))
+  return {
+    sha: arquivo.sha,
+    produtos: JSON.parse(conteudo || '[]'),
+  }
+}
+
 export function getProdutos() {
   return [...getProdutosAdmin(), ...produtosBase]
+}
+
+export async function carregarProdutos() {
+  try {
+    const { produtos: produtosGithub } = await buscarArquivoGitHub('', GITHUB_BRANCH_PADRAO)
+    salvarProdutosAdminLocal(produtosGithub)
+    return [...produtosGithub, ...produtosBase]
+  } catch {
+    return getProdutos()
+  }
 }
 
 export const produtos = getProdutos()
@@ -308,8 +363,47 @@ export function salvarProdutoAdmin(dados) {
     produto.imagens = [fotos.sofaSala]
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([produto, ...atuais]))
+  salvarProdutosAdminLocal([produto, ...atuais])
   return produto
+}
+
+export async function publicarProdutosGitHub(produtosAdmin, token, branch = GITHUB_BRANCH_PADRAO) {
+  if (!token.trim()) {
+    throw new Error('Informe um token do GitHub para publicar os produtos.')
+  }
+
+  const { sha } = await buscarArquivoGitHub(token, branch)
+  const conteudo = JSON.stringify(produtosAdmin, null, 2)
+  const resposta = await fetch(
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: 'chore: atualiza produtos do painel adm',
+        content: encodeBase64Unicode(conteudo),
+        branch,
+        ...(sha ? { sha } : {}),
+      }),
+    },
+  )
+
+  if (!resposta.ok) {
+    throw new Error('Não foi possível publicar os produtos no GitHub.')
+  }
+
+  salvarProdutosAdminLocal(produtosAdmin)
+  return resposta.json()
+}
+
+export async function carregarProdutosAdminGitHub(token = '', branch = GITHUB_BRANCH_PADRAO) {
+  const { produtos: produtosGithub } = await buscarArquivoGitHub(token, branch)
+  salvarProdutosAdminLocal(produtosGithub)
+  return produtosGithub
 }
 
 export function removerProdutoAdmin(id) {
@@ -318,7 +412,7 @@ export function removerProdutoAdmin(id) {
   }
 
   const atualizados = getProdutosAdmin().filter((produto) => produto.id !== id)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(atualizados))
+  salvarProdutosAdminLocal(atualizados)
 }
 
 export function getProdutosCriadosAdmin() {

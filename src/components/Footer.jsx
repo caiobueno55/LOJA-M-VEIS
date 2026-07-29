@@ -40,7 +40,7 @@ export default function Footer() {
       </div>
 
       <div className="container footer-bottom">
-        <p>© {new Date().getFullYear()} {loja.nome}. Site de exposição — pedidos via WhatsApp.</p>
+        <p>© 2026 JHL Móveis. Desenvolvido por Caio Bueno - Direitos Autorias Reservados</p>
       </div>
     </footer>
   )

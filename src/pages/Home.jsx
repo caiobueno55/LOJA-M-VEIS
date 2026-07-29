@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import { useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { categorias } from '../data/categorias.js'
-import { getDestaques } from '../data/produtos.js'
+import { carregarProdutos, getDestaques } from '../data/produtos.js'
 import { loja, linkWhatsApp } from '../data/loja.js'
 import CategoryCard from '../components/CategoryCard.jsx'
 import ProductCard from '../components/ProductCard.jsx'
@@ -9,7 +9,13 @@ import GrainDivider from '../components/GrainDivider.jsx'
 import './home.css'
 
 export default function Home() {
-  const destaques = useMemo(() => getDestaques(6), [])
+  const [destaques, setDestaques] = useState(() => getDestaques(6))
+
+  useEffect(() => {
+    carregarProdutos().then((lista) => {
+      setDestaques(lista.filter((produto) => produto.destaque).slice(0, 6))
+    })
+  }, [])
 
   return (
     <>
@@ -18,7 +24,7 @@ export default function Home() {
           <div className="hero-copy">
             <p className="eyebrow">Direto da fábrica para sua casa</p>
             <h1 className="hero-title">
-              Móveis de fábrica,
+              Móveis da fábrica,
               <br /> entrega e montagem.
             </h1>
             <p className="hero-text">
