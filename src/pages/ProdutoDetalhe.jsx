@@ -21,9 +21,14 @@ export default function ProdutoDetalhe() {
       const encontrado = lista.find((item) => item.slug === id)
       setProduto(encontrado)
       setRelacionados(
-        lista
-          .filter((item) => item.categoria_slug === encontrado?.categoria_slug && item.id !== encontrado.id)
-          .slice(0, 4),
+        encontrado
+          ? lista
+              .filter(
+                (item) =>
+                  item.categoria_slug === encontrado.categoria_slug && item.id !== encontrado.id,
+              )
+              .slice(0, 4)
+          : [],
       )
     })
   }, [id])

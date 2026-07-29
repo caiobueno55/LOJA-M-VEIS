@@ -1,13 +1,6 @@
 import { useState } from 'react'
 import { categorias } from '../data/categorias.js'
-import {
-  carregarProdutosAdminGitHub,
-  GITHUB_BRANCH_PADRAO,
-  getProdutosCriadosAdmin,
-  publicarProdutosGitHub,
-  removerProdutoAdmin,
-  salvarProdutoAdmin,
-} from '../data/produtos.js'
+import { carregarProdutos, criarProduto, salvarProduto } from '../data/produtos.js'
 import './admin.css'
 
 const SENHA_ADMIN = 'admin123'
@@ -35,12 +28,11 @@ export default function Admin() {
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [salvando, setSalvando] = useState(false)
-  const [token, setToken] = useState(() => localStorage.getItem('jhl-github-token') || '')
-  const [branch, setBranch] = useState(
-    () => localStorage.getItem('jhl-github-branch') || GITHUB_BRANCH_PADRAO,
+  const [adminSecret, setAdminSecret] = useState(
+    () => localStorage.getItem('jhl-admin-secret') || '',
   )
   const [form, setForm] = useState(inicial)
-  const [produtosAdmin, setProdutosAdmin] = useState(() => getProdutosCriadosAdmin())
+  const [produtosAdmin, setProdutosAdmin] = useState([])
 
   function entrar(event) {
     event.preventDefault()
@@ -57,23 +49,6 @@ export default function Admin() {
     setForm((atual) => ({ ...atual, [campo]: valor }))
   }
 
-  async function publicar(lista, mensagemSucesso) {
-    setSalvando(true)
-    setErro('')
-    setSucesso('')
-    try {
-      localStorage.setItem('jhl-github-token', token)
-      localStorage.setItem('jhl-github-branch', branch)
-      await publicarProdutosGitHub(lista, token, branch)
-      setProdutosAdmin(lista)
-      setSucesso(mensagemSucesso)
-    } catch (error) {
-      setErro(error.message)
-    } finally {
-      setSalvando(false)
-    }
-  }
-
   async function cadastrar(event) {
     event.preventDefault()
     if (!form.nome.trim() || !form.preco || !form.descricao_curta.trim()) {
@@ -81,16 +56,21 @@ export default function Admin() {
       return
     }
 
-    const produto = salvarProdutoAdmin(form)
-    const novaLista = [produto, ...produtosAdmin]
-    setForm(inicial)
-    await publicar(novaLista, 'Produto publicado no GitHub.')
-  }
-
-  async function remover(id) {
-    removerProdutoAdmin(id)
-    const novaLista = produtosAdmin.filter((produto) => produto.id !== id)
-    await publicar(novaLista, 'Produto removido e GitHub atualizado.')
+    setSalvando(true)
+    setErro('')
+    setSucesso('')
+    try {
+      localStorage.setItem('jhl-admin-secret', adminSecret)
+      const produto = criarProduto(form)
+      const resposta = await salvarProduto(produto, adminSecret)
+      setProdutosAdmin(resposta.produtos)
+      setForm(inicial)
+      setSucesso('Produto salvo no produtos.json pelo GitHub.')
+    } catch (error) {
+      setErro(error.message)
+    } finally {
+      setSalvando(false)
+    }
   }
 
   async function sincronizar() {
@@ -98,11 +78,9 @@ export default function Admin() {
     setErro('')
     setSucesso('')
     try {
-      localStorage.setItem('jhl-github-token', token)
-      localStorage.setItem('jhl-github-branch', branch)
-      const lista = await carregarProdutosAdminGitHub(token, branch)
+      const lista = await carregarProdutos()
       setProdutosAdmin(lista)
-      setSucesso('Produtos sincronizados do GitHub.')
+      setSucesso('Produtos carregados do produtos.json.')
     } catch (error) {
       setErro(error.message)
     } finally {
@@ -159,24 +137,16 @@ export default function Admin() {
           <form className="admin-form" onSubmit={cadastrar}>
             <div className="admin-sync">
               <label className="admin-field">
-                <span>Token do GitHub</span>
+                <span>Senha de publicação</span>
                 <input
                   type="password"
-                  value={token}
-                  onChange={(event) => setToken(event.target.value)}
-                  placeholder="Cole aqui um token com permissão de conteúdo"
-                />
-              </label>
-              <label className="admin-field">
-                <span>Branch</span>
-                <input
-                  value={branch}
-                  onChange={(event) => setBranch(event.target.value)}
-                  placeholder={GITHUB_BRANCH_PADRAO}
+                  value={adminSecret}
+                  onChange={(event) => setAdminSecret(event.target.value)}
+                  placeholder="ADMIN_SECRET configurado na Vercel"
                 />
               </label>
               <button className="btn btn-outline btn-sm" type="button" onClick={sincronizar}>
-                Sincronizar GitHub
+                Recarregar catálogo
               </button>
             </div>
 
@@ -306,9 +276,9 @@ export default function Admin() {
           </form>
 
           <aside className="admin-list">
-            <h2>Produtos criados</h2>
+            <h2>Catálogo publicado</h2>
             {produtosAdmin.length === 0 ? (
-              <p className="admin-empty">Nenhum produto criado pelo ADM ainda.</p>
+              <p className="admin-empty">Clique em recarregar catálogo para ver os produtos.</p>
             ) : (
               produtosAdmin.map((produto) => (
                 <div key={produto.id} className="admin-product">
@@ -321,9 +291,6 @@ export default function Admin() {
                         currency: 'BRL',
                       })}
                     </p>
-                    <button type="button" onClick={() => remover(produto.id)} disabled={salvando}>
-                      Remover
-                    </button>
                   </div>
                 </div>
               ))
