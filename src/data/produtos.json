@@ -1,5 +1,25 @@
 [
   {
+    "id": 1786416024729,
+    "slug": "teste-1786416024729",
+    "nome": "teste",
+    "categoria_slug": "sofas",
+    "preco": 142739,
+    "destaque": true,
+    "descricao_curta": "teste celular",
+    "descricao": "teste celular",
+    "especificacoes": {
+      "Dimensões": "Sob consulta",
+      "Material": "Sob consulta",
+      "Cor": "Sob consulta",
+      "Peso": "Sob consulta",
+      "Garantia": "12 meses"
+    },
+    "imagens": [
+      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=82"
+    ]
+  },
+  {
     "id": 1786415961084,
     "slug": "teste-1786415961084",
     "nome": "teste",
