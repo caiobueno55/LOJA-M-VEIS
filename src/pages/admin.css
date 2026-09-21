@@ -45,6 +45,19 @@
   margin-bottom: 2px;
 }
 
+.admin-editing {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--brown-700);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .admin-form-row {
   display: grid;
   grid-template-columns: 1fr 180px;
@@ -154,9 +167,28 @@
 .admin-product button {
   border: 0;
   background: transparent;
-  color: #9f2a1f;
   padding: 0;
   font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-product-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-product-actions button:first-child {
+  color: var(--brown-700);
+}
+
+.admin-product-actions button:last-child {
+  color: #9f2a1f;
+}
+
+.admin-product button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 @media (max-width: 900px) {

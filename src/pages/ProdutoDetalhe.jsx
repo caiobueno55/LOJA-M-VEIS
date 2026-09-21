@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, Navigate } from 'react-router-dom'
-import { carregarProdutos, getProdutoBySlug } from '../data/produtos.js'
+import { getProdutoBySlug, getRelacionados } from '../data/produtos.js'
 import { getCategoriaBySlug } from '../data/categorias.js'
 import { linkWhatsApp } from '../data/loja.js'
 import ProductCard from '../components/ProductCard.jsx'
@@ -17,24 +17,13 @@ export default function ProdutoDetalhe() {
   useEffect(() => {
     window.scrollTo({ top: 0 })
     setImagemAtiva(0)
-    carregarProdutos().then((lista) => {
-      const encontrado = lista.find((item) => item.slug === id)
-      setProduto(encontrado)
-      setRelacionados(
-        encontrado
-          ? lista
-              .filter(
-                (item) =>
-                  item.categoria_slug === encontrado.categoria_slug && item.id !== encontrado.id,
-              )
-              .slice(0, 4)
-          : [],
-      )
-    })
+    const encontrado = getProdutoBySlug(id)
+    setProduto(encontrado)
+    setRelacionados(encontrado ? getRelacionados(encontrado) : [])
   }, [id])
 
   if (!produto) {
-    return <Navigate to="/produtos" replace />
+    return <Navigate to="/404" replace />
   }
 
   const categoria = getCategoriaBySlug(produto.categoria_slug)
@@ -94,12 +83,17 @@ export default function ProdutoDetalhe() {
             <div className="produto-specs">
               <p className="produto-specs-titulo">Especificações</p>
               <dl>
-                {Object.entries(produto.especificacoes).map(([chave, valor]) => (
-                  <div key={chave} className="produto-spec-row">
-                    <dt>{chave}</dt>
-                    <dd>{valor}</dd>
-                  </div>
-                ))}
+                {(() => {
+                  const specs = []
+                  for (const chave in produto.especificacoes) {
+                    specs.push(
+                      <div key={chave} className="produto-spec-row">
+                        <dt>{chave}</dt> <dd>{produto.especificacoes[chave]}</dd>
+                      </div>,
+                    )
+                  }
+                  return specs
+                })()}
               </dl>
             </div>
           </div>

@@ -1,21 +1,17 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { categorias } from '../data/categorias.js'
-import { carregarProdutos, getDestaques } from '../data/produtos.js'
 import { loja, linkWhatsApp } from '../data/loja.js'
+import { getDestaques } from '../data/produtos.js'
 import CategoryCard from '../components/CategoryCard.jsx'
 import ProductCard from '../components/ProductCard.jsx'
 import GrainDivider from '../components/GrainDivider.jsx'
 import './home.css'
 
 export default function Home() {
-  const [destaques, setDestaques] = useState(() => getDestaques(6))
-
-  useEffect(() => {
-    carregarProdutos().then((lista) => {
-      setDestaques(lista.filter((produto) => produto.destaque).slice(0, 6))
-    })
-  }, [])
+  const [destaques] = useState(() =>
+    getDestaques(6)
+  )
 
   return (
     <>

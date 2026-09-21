@@ -1,5 +1,65 @@
 [
   {
+    "id": 1786416024729,
+    "slug": "teste-1786416024729",
+    "nome": "teste",
+    "categoria_slug": "sofas",
+    "preco": 142739,
+    "destaque": true,
+    "descricao_curta": "teste celular",
+    "descricao": "teste celular",
+    "especificacoes": {
+      "Dimensões": "Sob consulta",
+      "Material": "Sob consulta",
+      "Cor": "Sob consulta",
+      "Peso": "Sob consulta",
+      "Garantia": "12 meses"
+    },
+    "imagens": [
+      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=82"
+    ]
+  },
+  {
+    "id": 1786415961084,
+    "slug": "teste-1786415961084",
+    "nome": "teste",
+    "categoria_slug": "sofas",
+    "preco": 123456,
+    "destaque": true,
+    "descricao_curta": "tesede",
+    "descricao": "rrewrwrw",
+    "especificacoes": {
+      "Dimensões": "Sob consulta",
+      "Material": "Sob consulta",
+      "Cor": "Sob consulta",
+      "Peso": "Sob consulta",
+      "Garantia": "12 meses"
+    },
+    "imagens": [
+      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=82"
+    ]
+  },
+  {
+    "id": 1785293528154,
+    "slug": "teste-1785293528154",
+    "nome": "teste",
+    "categoria_slug": "sofas",
+    "preco": 123456,
+    "destaque": true,
+    "descricao_curta": "teste",
+    "descricao": "teste",
+    "especificacoes": {
+      "Dimensões": "Sob consulta",
+      "Material": "Sob consulta",
+      "Cor": "Sob consulta",
+      "Peso": "Sob consulta",
+      "Garantia": "12 meses"
+    },
+    "imagens": [
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlnPQmg7ugks5FLDgu4Rcb07PKKRQB9BkccoWotUVX1w&s=10"
+    ]
+  },
+  {
     "id": 1,
     "slug": "sofa-retratil-linhares",
     "nome": "Sofá Retrátil Linhares",

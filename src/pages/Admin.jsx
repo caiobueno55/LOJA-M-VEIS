@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { categorias } from '../data/categorias.js'
-import { carregarProdutos, criarProduto, salvarProduto } from '../data/produtos.js'
+import { atualizarProduto, carregarProdutos, criarProduto, excluirProduto, salvarProduto } from '../data/produtos.js'
 import './admin.css'
 
 const SENHA_ADMIN = 'admin123'
@@ -20,6 +20,25 @@ const inicial = {
   garantia: '12 meses',
 }
 
+function produtoParaForm(produto) {
+  const especificacoes = produto.especificacoes || {}
+
+  return {
+    nome: produto.nome || '',
+    categoria_slug: produto.categoria_slug || 'sofas',
+    preco: produto.preco ?? '',
+    destaque: Boolean(produto.destaque),
+    descricao_curta: produto.descricao_curta || '',
+    descricao: produto.descricao || '',
+    imagens: Array.isArray(produto.imagens) ? produto.imagens.join('\n') : '',
+    dimensoes: especificacoes.Dimensões || especificacoes.Dimensoes || '',
+    material: especificacoes.Material || '',
+    cor: especificacoes.Cor || '',
+    peso: especificacoes.Peso || '',
+    garantia: especificacoes.Garantia || '12 meses',
+  }
+}
+
 export default function Admin() {
   const [autenticado, setAutenticado] = useState(
     () => typeof sessionStorage !== 'undefined' && sessionStorage.getItem('jhl-admin-auth') === 'true',
@@ -33,11 +52,12 @@ export default function Admin() {
   )
   const [form, setForm] = useState(inicial)
   const [produtosAdmin, setProdutosAdmin] = useState([])
+  const [produtoEditando, setProdutoEditando] = useState(null)
 
   function entrar(event) {
     event.preventDefault()
     if (senha !== SENHA_ADMIN) {
-      setErro('Senha incorreta. Para demonstração, use admin123.')
+      setErro('Senha incorreta. Para demonstracao, use admin123.')
       return
     }
     sessionStorage.setItem('jhl-admin-auth', 'true')
@@ -49,10 +69,17 @@ export default function Admin() {
     setForm((atual) => ({ ...atual, [campo]: valor }))
   }
 
-  async function cadastrar(event) {
+  function cancelarEdicao() {
+    setProdutoEditando(null)
+    setForm(inicial)
+    setErro('')
+    setSucesso('')
+  }
+
+  async function salvar(event) {
     event.preventDefault()
     if (!form.nome.trim() || !form.preco || !form.descricao_curta.trim()) {
-      setErro('Preencha nome, preço e descrição curta.')
+      setErro('Preencha nome, preco e descricao curta.')
       return
     }
 
@@ -61,11 +88,21 @@ export default function Admin() {
     setSucesso('')
     try {
       localStorage.setItem('jhl-admin-secret', adminSecret)
-      const produto = criarProduto(form)
-      const resposta = await salvarProduto(produto, adminSecret)
+      const produto = produtoEditando
+        ? {
+            ...criarProduto(form),
+            id: produtoEditando.id,
+            slug: produtoEditando.slug,
+          }
+        : criarProduto(form)
+      const resposta = produtoEditando
+        ? await atualizarProduto(produto, adminSecret)
+        : await salvarProduto(produto, adminSecret)
+
       setProdutosAdmin(resposta.produtos)
       setForm(inicial)
-      setSucesso('Produto salvo no produtos.json pelo GitHub.')
+      setProdutoEditando(null)
+      setSucesso(produtoEditando ? 'Produto atualizado no catalogo.' : 'Produto salvo no produtos.json pelo GitHub.')
     } catch (error) {
       setErro(error.message)
     } finally {
@@ -80,7 +117,40 @@ export default function Admin() {
     try {
       const lista = await carregarProdutos()
       setProdutosAdmin(lista)
-      setSucesso('Produtos carregados do produtos.json.')
+      setSucesso('Produtos carregados do catalogo publicado.')
+    } catch (error) {
+      setErro(error.message)
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  function editar(produto) {
+    setProdutoEditando(produto)
+    setForm(produtoParaForm(produto))
+    setErro('')
+    setSucesso('')
+  }
+
+  async function remover(produto) {
+    const confirmar = window.confirm(`Excluir "${produto.nome}" do catalogo?`)
+
+    if (!confirmar) {
+      return
+    }
+
+    setSalvando(true)
+    setErro('')
+    setSucesso('')
+    try {
+      localStorage.setItem('jhl-admin-secret', adminSecret)
+      const resposta = await excluirProduto(produto.id, adminSecret)
+      setProdutosAdmin(resposta.produtos)
+      if (produtoEditando?.id === produto.id) {
+        setProdutoEditando(null)
+        setForm(inicial)
+      }
+      setSucesso('Produto excluido do catalogo.')
     } catch (error) {
       setErro(error.message)
     } finally {
@@ -120,7 +190,7 @@ export default function Admin() {
         <div className="section-head">
           <div>
             <p className="eyebrow">Painel ADM</p>
-            <h1 className="section-title">Cadastrar produtos</h1>
+            <h1 className="section-title">Gerenciar produtos</h1>
           </div>
           <button
             className="btn btn-outline btn-sm"
@@ -134,10 +204,10 @@ export default function Admin() {
         </div>
 
         <div className="admin-grid">
-          <form className="admin-form" onSubmit={cadastrar}>
+          <form className="admin-form" onSubmit={salvar}>
             <div className="admin-sync">
               <label className="admin-field">
-                <span>Senha de publicação</span>
+                <span>Senha de publicacao</span>
                 <input
                   type="password"
                   value={adminSecret}
@@ -146,9 +216,18 @@ export default function Admin() {
                 />
               </label>
               <button className="btn btn-outline btn-sm" type="button" onClick={sincronizar}>
-                Recarregar catálogo
+                Recarregar catalogo
               </button>
             </div>
+
+            {produtoEditando && (
+              <div className="admin-editing">
+                <span>Editando: {produtoEditando.nome}</span>
+                <button className="btn btn-outline btn-sm" type="button" onClick={cancelarEdicao}>
+                  Cancelar
+                </button>
+              </div>
+            )}
 
             <div className="admin-form-row">
               <label className="admin-field">
@@ -160,7 +239,7 @@ export default function Admin() {
                 />
               </label>
               <label className="admin-field">
-                <span>Preço</span>
+                <span>Preco</span>
                 <input
                   type="number"
                   min="0"
@@ -197,7 +276,7 @@ export default function Admin() {
             </div>
 
             <label className="admin-field">
-              <span>Descrição curta</span>
+              <span>Descricao curta</span>
               <input
                 value={form.descricao_curta}
                 onChange={(event) => atualizar('descricao_curta', event.target.value)}
@@ -206,11 +285,11 @@ export default function Admin() {
             </label>
 
             <label className="admin-field">
-              <span>Descrição completa</span>
+              <span>Descricao completa</span>
               <textarea
                 value={form.descricao}
                 onChange={(event) => atualizar('descricao', event.target.value)}
-                placeholder="Texto da página de detalhes"
+                placeholder="Texto da pagina de detalhes"
                 rows="4"
               />
             </label>
@@ -227,7 +306,7 @@ export default function Admin() {
 
             <div className="admin-form-row admin-form-row-specs">
               <label className="admin-field">
-                <span>Dimensões</span>
+                <span>Dimensoes</span>
                 <input
                   value={form.dimensoes}
                   onChange={(event) => atualizar('dimensoes', event.target.value)}
@@ -247,7 +326,7 @@ export default function Admin() {
                 <input
                   value={form.cor}
                   onChange={(event) => atualizar('cor', event.target.value)}
-                  placeholder="Freijó / off-white"
+                  placeholder="Freijo / off-white"
                 />
               </label>
               <label className="admin-field">
@@ -271,14 +350,14 @@ export default function Admin() {
             {erro && <p className="admin-error">{erro}</p>}
             {sucesso && <p className="admin-success">{sucesso}</p>}
             <button className="btn btn-accent" type="submit" disabled={salvando}>
-              {salvando ? 'Publicando...' : 'Criar produto'}
+              {salvando ? 'Publicando...' : produtoEditando ? 'Salvar alteracoes' : 'Criar produto'}
             </button>
           </form>
 
           <aside className="admin-list">
-            <h2>Catálogo publicado</h2>
-            {produtosAdmin.length === 0 ? (
-              <p className="admin-empty">Clique em recarregar catálogo para ver os produtos.</p>
+            <h2>Catalogo publicado</h2>
+            {produtosAdmin.length === 0 || produtosAdmin.every((p) => !p.id) ? (
+              <p className="admin-empty">Clique em recarregar catalogo para ver os produtos.</p>
             ) : (
               produtosAdmin.map((produto) => (
                 <div key={produto.id} className="admin-product">
@@ -291,6 +370,14 @@ export default function Admin() {
                         currency: 'BRL',
                       })}
                     </p>
+                    <div className="admin-product-actions">
+                      <button type="button" onClick={() => editar(produto)} disabled={salvando}>
+                        Editar
+                      </button>
+                      <button type="button" onClick={() => remover(produto)} disabled={salvando}>
+                        Excluir
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
