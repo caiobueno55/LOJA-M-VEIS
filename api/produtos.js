@@ -53,7 +53,7 @@ async function putProdutosFile(produtos, sha) {
   const { owner, repo, branch, token } = githubConfig()
 
   if (!token) {
-    throw new Error('GITHUB_TOKEN não configurado no servidor.')
+    throw new Error('GITHUB_TOKEN nao configurado no servidor.')
   }
 
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${PRODUTOS_PATH}`
@@ -80,17 +80,22 @@ async function putProdutosFile(produtos, sha) {
   return response.json()
 }
 
+function isAdmin(req) {
+  const adminSecret = process.env.ADMIN_SECRET
+  return Boolean(adminSecret && req.headers['x-admin-secret'] === adminSecret)
+}
+
 function validarProduto(produto) {
   if (!produto || typeof produto !== 'object') {
-    return 'Produto inválido.'
+    return 'Produto invalido.'
   }
 
   if (!produto.nome || !produto.slug || !produto.categoria_slug) {
-    return 'Nome, slug e categoria são obrigatórios.'
+    return 'Nome, slug e categoria sao obrigatorios.'
   }
 
   if (!Number.isFinite(Number(produto.preco))) {
-    return 'Preço inválido.'
+    return 'Preco invalido.'
   }
 
   if (!Array.isArray(produto.imagens) || produto.imagens.length === 0) {
@@ -120,10 +125,8 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const adminSecret = process.env.ADMIN_SECRET
-
-      if (!adminSecret || req.headers['x-admin-secret'] !== adminSecret) {
-        return json(res, 401, { error: 'Não autorizado.' })
+      if (!isAdmin(req)) {
+        return json(res, 401, { error: 'Nao autorizado.' })
       }
 
       const produto = getRequestBody(req)
@@ -136,7 +139,7 @@ export default async function handler(req, res) {
       const { sha, produtos } = await getProdutosFile()
 
       if (produtos.some((item) => item.slug === produto.slug)) {
-        return json(res, 409, { error: 'Já existe um produto com esse slug.' })
+        return json(res, 409, { error: 'Ja existe um produto com esse slug.' })
       }
 
       const atualizados = [produto, ...produtos]
@@ -144,8 +147,64 @@ export default async function handler(req, res) {
       return json(res, 201, { produto, commit: commit.commit?.sha, produtos: atualizados })
     }
 
-    res.setHeader('Allow', 'GET, POST')
-    return json(res, 405, { error: 'Método não permitido.' })
+    if (req.method === 'PUT') {
+      if (!isAdmin(req)) {
+        return json(res, 401, { error: 'Nao autorizado.' })
+      }
+
+      const produto = getRequestBody(req)
+      const erro = validarProduto(produto)
+
+      if (erro) {
+        return json(res, 400, { error: erro })
+      }
+
+      if (!produto.id) {
+        return json(res, 400, { error: 'ID do produto e obrigatorio.' })
+      }
+
+      const { sha, produtos } = await getProdutosFile()
+      const index = produtos.findIndex((item) => String(item.id) === String(produto.id))
+
+      if (index === -1) {
+        return json(res, 404, { error: 'Produto nao encontrado.' })
+      }
+
+      if (produtos.some((item) => item.slug === produto.slug && String(item.id) !== String(produto.id))) {
+        return json(res, 409, { error: 'Ja existe outro produto com esse slug.' })
+      }
+
+      const atualizados = [...produtos]
+      atualizados[index] = produto
+      const commit = await putProdutosFile(atualizados, sha)
+      return json(res, 200, { produto, commit: commit.commit?.sha, produtos: atualizados })
+    }
+
+    if (req.method === 'DELETE') {
+      if (!isAdmin(req)) {
+        return json(res, 401, { error: 'Nao autorizado.' })
+      }
+
+      const id = req.query?.id
+
+      if (!id) {
+        return json(res, 400, { error: 'ID do produto e obrigatorio.' })
+      }
+
+      const { sha, produtos } = await getProdutosFile()
+      const produto = produtos.find((item) => String(item.id) === String(id))
+
+      if (!produto) {
+        return json(res, 404, { error: 'Produto nao encontrado.' })
+      }
+
+      const atualizados = produtos.filter((item) => String(item.id) !== String(id))
+      const commit = await putProdutosFile(atualizados, sha)
+      return json(res, 200, { produto, commit: commit.commit?.sha, produtos: atualizados })
+    }
+
+    res.setHeader('Allow', 'GET, POST, PUT, DELETE')
+    return json(res, 405, { error: 'Metodo nao permitido.' })
   } catch (error) {
     return json(res, 500, { error: error.message || 'Erro interno.' })
   }
