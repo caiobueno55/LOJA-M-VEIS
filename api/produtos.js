@@ -1,6 +1,6 @@
 const DEFAULT_OWNER = 'caiobueno55'
 const DEFAULT_REPO = 'LOJA-M-VEIS'
-const DEFAULT_BRANCH = 'feature/painel-admin-produtos'
+const DEFAULT_BRANCH = 'main'
 const PRODUTOS_PATH = 'src/data/produtos.json'
 
 function githubConfig() {
